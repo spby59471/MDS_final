@@ -50,3 +50,121 @@
 
     成功運行後，Vite 通常會在終端機中顯示應用程式的訪問地址，例如：`http://localhost:5173`。您可以在瀏覽器中打開這個地址來查看應用程式。
 
+
+---
+
+# Backend 
+
+本專案資料儲存在 PostgreSQL 資料庫中，並以 CSV 格式提供原始資料。  
+此說明文件教你如何建立資料庫、建立資料表、以及匯入 CSV 資料。
+
+---
+
+## 前置條件
+
+- 已安裝 PostgreSQL（本機或 Docker 皆可）  
+- 已安裝 `psql` 工具 (PostgreSQL CLI)  
+- 確認已拿到 CSV 資料檔 `emission_data.csv`
+
+---
+
+## 步驟
+
+### 1. 啟動 PostgreSQL 伺服器
+
+- 若用 Docker，請先確保容器已啟動，例如：
+
+  ```bash
+  docker-compose up -d```
+- 本機 PostgreSQL 請確定已啟動服務。
+
+### 2.  **建立資料庫（第一次使用者執行）**
+
+    連線到 PostgreSQL：
+
+    ```bash
+    psql -U myuser -h localhost -p 5432
+    ```
+
+    建立資料庫：
+
+    ```sql
+    CREATE DATABASE agri_db;
+    \q
+    ```
+
+### 3.  **建立資料表結構**
+
+    重新連線至剛建立的資料庫：
+
+    ```bash
+    psql -U myuser -h localhost -p 5432 -d agri_db
+    ```
+
+    執行以下 SQL 建立資料表：
+
+    ```sql
+    CREATE TABLE emission_data (
+      id SERIAL PRIMARY KEY,
+      area TEXT,
+      year INT,
+      savanna_fires FLOAT,
+      forest_fires FLOAT,
+      crop_residues FLOAT,
+      rice_cultivation FLOAT,
+      drained_soils FLOAT,
+      pesticides FLOAT,
+      food_transport FLOAT,
+      forestland FLOAT,
+      net_forest_conversion FLOAT,
+      food_household FLOAT,
+      food_retail FLOAT,
+      onfarm_electricity FLOAT,
+      food_packaging FLOAT,
+      agrifood_waste FLOAT,
+      food_processing FLOAT,
+      fertilizers FLOAT,
+      ippu FLOAT,
+      manure_applied FLOAT,
+      manure_left FLOAT,
+      manure_management FLOAT,
+      fires_organic FLOAT,
+      fires_humid FLOAT,
+      onfarm_energy FLOAT,
+      rural_population FLOAT,
+      urban_population FLOAT,
+      total_pop_male FLOAT,
+      total_pop_female FLOAT,
+      total_emission FLOAT,
+      avg_temp FLOAT
+    );
+    ```
+
+### 4.  **匯入 CSV 資料**
+
+    請確認 `Agrofood_co2_emission.csv` 放在你的本機路徑，並在 `psql` 裡執行：
+
+    ```sql
+    \copy Agrofood_co2_emission(area, year, savanna_fires, forest_fires, crop_residues, rice_cultivation, drained_soils, pesticides, food_transport, forestland, net_forest_conversion, food_household, food_retail, onfarm_electricity, food_packaging, agrifood_waste, food_processing, fertilizers, ippu, manure_applied, manure_left, manure_management, fires_organic, fires_humid, onfarm_energy, rural_population, urban_population, total_pop_male, total_pop_female, total_emission, avg_temp)
+    FROM '/path/to/Agrofood_co2_emission.csv'
+    DELIMITER ','
+    CSV HEADER;
+    ```
+    請將 `/path/to/Agrofood_co2_emission.csv` 改成你的實際路徑。
+
+### 5.  **驗證資料**
+
+    匯入後可用以下指令查看資料：
+
+    ```sql
+    SELECT * FROM Agrofood_co2_emission LIMIT 10;
+    ```
+
+---
+
+**附註**
+
+* 若你使用 Docker 內的 PostgreSQL，`psql` 連線的 `host` 可使用 `localhost`，或容器內部名稱視狀況而定。
+* 若遇到權限問題或連線失敗，請先確認環境變數與網路設定。
+
+
