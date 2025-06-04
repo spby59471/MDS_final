@@ -1,0 +1,39 @@
+from sqlalchemy import Column, Integer, Float, String
+from .database import Base
+
+class EmissionData(Base):
+    __tablename__ = "emission_data"
+
+    id = Column(Integer, primary_key=True, index=True)
+    area = Column(String)
+    year = Column(Integer)
+
+    savanna_fires = Column(Float)
+    forest_fires = Column(Float)
+    crop_residues = Column(Float)
+    rice_cultivation = Column(Float)
+    drained_soils = Column(Float)
+    pesticides = Column(Float)
+    food_transport = Column(Float)
+    forestland = Column(Float)
+    net_forest_conversion = Column(Float)
+    food_household = Column(Float)
+    food_retail = Column(Float)
+    onfarm_electricity = Column(Float)
+    food_packaging = Column(Float)
+    agrifood_waste = Column(Float)
+    food_processing = Column(Float)
+    fertilizers = Column(Float)
+    ippu = Column(Float)
+    manure_applied = Column(Float)
+    manure_left = Column(Float)
+    manure_management = Column(Float)
+    fires_organic = Column(Float)
+    fires_humid = Column(Float)
+    onfarm_energy = Column(Float, nullable=True)
+    rural_population = Column(Integer)
+    urban_population = Column(Integer)
+    total_pop_male = Column(Integer)
+    total_pop_female = Column(Integer)
+    total_emission = Column(Float)
+    avg_temp = Column(Float)

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# VSCode
+.vscode/
+
+# Database files (如果有)
+*.sqlite3
+
+# Mac OS
+.DS_Store
+
+# Node modules (如果有 Node.js)
+node_modules/
