@@ -2,6 +2,7 @@
 import React from 'react';
 import YearDashboard from './YearDashboard';
 import CountryDashboard from './CountryDashboard';
+import ContinentDashboard from './ContinentDashboard';
 
 interface DashboardPageProps {
   selectedYear: number;
@@ -9,7 +10,7 @@ interface DashboardPageProps {
 }
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ selectedYear, setSelectedYear }) => {
-  const [view, setView] = React.useState<'year' | 'country'>('year');
+  const [view, setView] = React.useState<'year' | 'country' | 'continent'>('year');
 
   const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedYear(Number(event.target.value));
@@ -20,16 +21,34 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ selectedYear, setSelected
       <div className="flex flex-col lg:flex-row justify-between items-center">
         <div className="flex gap-4 mb-4 lg:mb-0">
           <button
-            className={`px-4 py-2 rounded text-white font-semibold ${view === 'year' ? 'bg-blue-600' : 'bg-gray-400 hover:bg-gray-500'}`}
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'year' ? 'ring-2 ring-white' : ''}`}
             onClick={() => setView('year')}
           >
-            按年份查看
+            View by Year
           </button>
           <button
-            className={`px-4 py-2 rounded text-white font-semibold ${view === 'country' ? 'bg-blue-600' : 'bg-gray-400 hover:bg-gray-500'}`}
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'country' ? 'ring-2 ring-white' : ''}`}
             onClick={() => setView('country')}
           >
-            按國家查看
+            View by Country
+          </button>
+          <button
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'continent' ? 'ring-2 ring-white' : ''}`}
+            onClick={() => setView('continent')}
+          >
+            View by Continent
           </button>
         </div>
 
@@ -38,22 +57,20 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ selectedYear, setSelected
           onChange={handleYearChange}
           className="border rounded px-4 py-2 text-gray-800"
         >
-        {Array.from({ length: 2020 - 1990 + 1 }, (_, i) => {
+          {Array.from({ length: 2020 - 1990 + 1 }, (_, i) => {
             const year = 2020 - i;
             return (
-                <option key={year} value={year}>
+              <option key={year} value={year}>
                 {year}
-                </option>
+              </option>
             );
-        })}
+          })}
         </select>
       </div>
 
-      {view === 'year' ? (
-        <YearDashboard selectedYear={selectedYear} />
-      ) : (
-        <CountryDashboard selectedYear={selectedYear} />
-      )}
+      {view === 'year' && <YearDashboard selectedYear={selectedYear} />}
+      {view === 'country' && <CountryDashboard selectedYear={selectedYear} />}
+      {view === 'continent' && <ContinentDashboard/>}
     </div>
   );
 };
