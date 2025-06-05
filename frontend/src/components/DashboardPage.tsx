@@ -1,123 +1,94 @@
-import React, { useState } from 'react';
+// components/DashboardPage.tsx
+import React from 'react';
 import YearDashboard from './YearDashboard';
 import CountryDashboard from './CountryDashboard';
-import GlobalBoard from './GlobalBoard';
+// import ContinentDashboard from './ContinentDashboard';
+import PredictDashboard from './PredictDashboard';
 
 interface DashboardPageProps {
   selectedYear: number;
   setSelectedYear: (year: number) => void;
 }
 
-const featureLabels = [
-  "Savanna fires", "Forest fires", "Fires in organic soils",
-  "Rice Cultivation", "Food Retail", "Food Transport", "Pesticides Manufacturing",
-  "Forestland", "Net Forest conversion",
-  "Manure applied to Soils", "Manure left on Pasture",
-  "On-farm Electricity Use", "IPPU", "Drained organic soils (CO2)"
-];
+const DashboardPage: React.FC<DashboardPageProps> = ({ selectedYear, setSelectedYear }) => {
+  const [view, setView] = React.useState<'predict' | 'year' | 'country' | 'continent'>('predict');
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ selectedYear }) => {
-  const [view, setView] = useState<'predict' | 'year' | 'country' | 'global'>('predict');
-  const [features, setFeatures] = useState<number[]>(Array(14).fill(0));
-  const [predictionResult, setPredictionResult] = useState<{ prediction: number; probability: number; meaning: string } | null>(null);
-
-  const handleFeatureChange = (index: number, value: string) => {
-    const newFeatures = [...features];
-    const parsed = parseFloat(value);
-    newFeatures[index] = isNaN(parsed) ? 0 : parsed;
-    setFeatures(newFeatures);
-  };
-
-  const handlePredict = async () => {
-    try {
-      const response = await fetch("/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ features })
-      });
-
-      if (!response.ok) throw new Error("API 錯誤");
-      const result = await response.json();
-      setPredictionResult(result);
-    } catch (error) {
-      alert("預測失敗，請確認輸入與伺服器狀態");
+  const handleYearChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    if (view === 'year') {
+    setSelectedYear(Number(event.target.value));
     }
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      <div className="flex justify-end items-center gap-4">
-        <button
-            className="px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700"
-            onClick={() => setView('global')}
+    <div className="max-w-7xl mx-auto p-6 mt-0 space-y-6">
+      <div className="flex flex-col lg:flex-row justify-between items-center">
+        <div className="flex gap-4 mb-4 lg:mb-0">
+          <button
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'predict' ? 'ring-2 ring-white' : ''}`}
+            onClick={() => setView('predict')}
+          >
+            Predict Model
+          </button>
+          <button
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'year' ? 'ring-2 ring-white' : ''}`}
+            onClick={() => setView('year')}
+          >
+            View by Year
+          </button>
+          <button
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'country' ? 'ring-2 ring-white' : ''}`}
+            onClick={() => setView('country')}
+          >
+            View by Country
+          </button>
+          {/* <button
+            className={`px-4 py-2 text-white rounded transition
+              bg-[#058068]
+              hover:bg-[#069A7D]
+              font-bold 
+              ${view === 'continent' ? 'ring-2 ring-white' : ''}`}
+            onClick={() => setView('continent')}
+          >
+            View by Continent
+          </button> */}
+        </div>
+        {view === 'year' && (
+        <select
+          value={selectedYear}
+          onChange={handleYearChange}
+          className="border rounded px-4 py-2 text-gray-800"
         >
-            查看全球總覽
-        </button>
-        <button
-          className="px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700"
-          onClick={() => setView('year')}
-        >
-          按年份查看
-        </button>
-        <button
-          className="px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700"
-          onClick={() => setView('country')}
-        >
-          按國家查看
-        </button>
+          {Array.from({ length: 2020 - 1990 + 1 }, (_, i) => {
+            const year = 2020 - i;
+            return (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            );
+          })}
+        </select>
+      )}
       </div>
 
-      {view === 'predict' && (
-        <div className="bg-white shadow p-6 rounded space-y-4">
-          <h2 className="text-xl font-bold">Carbon Emission Risk Prediction (Enter 14 Indicators)</h2>
-          {/* <p className="text-gray-600">目前年份：{selectedYear}</p> */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {featureLabels.map((label, index) => (
-              <div key={index} className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700">{label}</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  step="any"
-                  value={features[index]}
-                  onChange={(e) => handleFeatureChange(index, e.target.value)}
-                  className="border rounded px-2 py-1"
-                />
-              </div>
-            ))}
-          </div>
-          <button
-            onClick={handlePredict}
-            className="mt-4 px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            Predict
-          </button>
-          {predictionResult && (
-            <div className="mt-4 p-4 bg-gray-100 rounded">
-              <p>Prediction: <strong>{predictionResult.meaning}</strong></p>
-              <p>Probability: {(predictionResult.probability * 100).toFixed(2)}%</p>
-            </div>
-          )}
-        </div>
-      )}
-      {view === 'global' && (
-        <GlobalBoard goBack={() => setView('predict')} />
-      )}
-      {view === 'year' && (
-        <YearDashboard
-          selectedYear={selectedYear}
-          goBack={() => setView('predict')}
-        />
-      )}
-
-      {view === 'country' && (
-        <CountryDashboard
-          selectedYear={selectedYear}
-          goBack={() => setView('predict')}
-        />
-      )}
+      {view === 'predict' && <PredictDashboard />}
+      {view === 'year' && <YearDashboard selectedYear={selectedYear} />}
+      {view === 'country' && <CountryDashboard selectedYear={selectedYear} />}
+      {/* {view === 'continent' && <ContinentDashboard/>} */}
     </div>
   );
 };
 
 export default DashboardPage;
+

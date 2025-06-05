@@ -10,7 +10,8 @@ export default defineConfig({
   server: {
     proxy: {
       '/data': 'http://localhost:8000',
-      '/predict': 'http://localhost:8000'
+      '/predict': 'http://localhost:8000',
+      '/api': 'http://localhost:8000'
     },
   },
 })

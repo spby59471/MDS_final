@@ -12,7 +12,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 to-neutral-100">
       <Header />
       
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-1">
         {page === 'dashboard' && (
           <DashboardPage
             selectedYear={selectedYear}
@@ -21,12 +21,12 @@ const App: React.FC = () => {
           />
         )}
 
-        {page === 'year' && (
+        {/* {page === 'year' && (
           <YearDashboard
             selectedYear={selectedYear}
             goBack={() => setPage('dashboard')}
           />
-        )}
+        )} */}
       </main>
 
       {/* <Footer /> */}

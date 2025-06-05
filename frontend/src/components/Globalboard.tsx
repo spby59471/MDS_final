@@ -1,87 +1,107 @@
 import React, { useEffect, useState } from 'react';
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip
-} from 'recharts';
+import Plot from 'react-plotly.js';
 
-interface GlobalBoardProps {
-  goBack: () => void;
-}
-
-interface CountryEmission {
-  area: string;
-  value: number;
-}
-
-const GlobalBoard: React.FC<GlobalBoardProps> = ({ goBack }) => {
-  const [data, setData] = useState<CountryEmission[]>([]);
-  const [loading, setLoading] = useState(true);
+const GlobalBoard: React.FC<{ goBack: () => void }> = ({ goBack }) => {
+  const [year, setYear] = useState(2020);
+  const [plotData, setPlotData] = useState<any>(null);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/data/global_summary'); // e.g., [{ area: "China", value: 50000 }]
-        const json = await res.json();
-        const sorted = json
-          .filter((d: any) => typeof d.value === 'number')
-          .sort((a: any, b: any) => b.value - a.value)
-          .slice(0, 10); // top 10
-        setData(sorted);
-      } catch (err) {
-        console.error('載入失敗:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetch(`/data/global_data?year=${year}`)
+      .then(res => res.json())
+      .then(data => {
+        // 洲別顏色對應
+        const continentColorMap: Record<string, string> = {
+          'Asia': '#e6194b',
+          'Europe': '#3cb44b',
+          'Africa': '#ffe119',
+          'North America': '#4363d8',
+          'South America': '#f58231',
+          'Oceania': '#911eb4',
+        };
 
-    load();
-  }, []);
+        // 把資料依洲分組
+        const grouped: Record<string, any[]> = {};
+        data.forEach((item: any) => {
+          if (!grouped[item.continent]) {
+            grouped[item.continent] = [];
+          }
+          grouped[item.continent].push(item);
+        });
 
-  if (loading) return <p className="text-center">載入中...</p>;
+        // 為每個洲建立一個 trace
+        const traces = Object.keys(grouped).map((continent) => {
+          const countries = grouped[continent];
+          return {
+            type: 'scattergeo',
+            name: continent,
+            locations: countries.map((d) => d.iso_alpha),
+            text: countries.map((d) =>
+              `${d.Area}<br>Total Emission: ${Math.round(d.total_emission).toLocaleString()}`
+            ),
+            hoverinfo: 'text',
+            marker: {
+              size: countries.map((d) => Math.sqrt(d.total_emission) / 30),
+              color: continentColorMap[continent] || '#999999',
+              line: {
+                width: 0.5,
+                color: 'rgba(0,0,0,0.5)',
+              },
+            },
+          };
+        });
+
+        setPlotData({
+          data: traces,
+          layout: {
+            title: `Agrifood CO₂ Emission Map (${year})`,
+            geo: { projection: { type: 'natural earth' } },
+            height: 600,
+            width: 1000,
+            legend: {
+              title: { text: "Continent" },
+              orientation: "h",
+              x: 0.5,
+              xanchor: "center",
+              y: -0.1,
+            },
+          },
+        });
+      });
+  }, [year]);
 
   return (
-    <div className="space-y-8">
-      <div className="text-left">
+    <div className="space-y-6 px-6 py-4">
+      {/* 上方控制區 */}
+      <div className="flex justify-between items-center">
         <button
           onClick={goBack}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           回到預測頁面
         </button>
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-semibold">年份：</label>
+          <select
+            value={year}
+            onChange={e => setYear(Number(e.target.value))}
+            className="border rounded px-4 py-2"
+          >
+            {Array.from({ length: 2020 - 1990 + 1 }, (_, i) => 2020 - i).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      <h2 className="text-2xl font-bold text-center">全球前十大 CO₂ 排放國家</h2>
-
-      <div className="bg-white p-6 rounded shadow">
-        <ResponsiveContainer width="100%" height={500}>
-          <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="area"
-              angle={-30}
-              textAnchor="end"
-              interval={0}
-              tick={{ fontSize: 12 }}
-              height={70}
-            />
-            <YAxis
-              tick={{ fontSize: 12 }}
-              label={{
-                value: 'Mt CO₂',
-                position: 'insideTopLeft',
-                offset: 0,
-                style: { fontSize: 14 }
-              }}
-            />
-            <Tooltip formatter={(val: number) => `${val.toLocaleString()} Mt`} />
-            <Bar dataKey="value" fill="#3b82f6" />
-          </BarChart>
-        </ResponsiveContainer>
+      {/* 地圖區域 */}
+      <div className="flex justify-center">
+        {plotData && (
+          <Plot
+            data={plotData.data}
+            layout={plotData.layout}
+            config={{ responsive: true }}
+          />
+        )}
       </div>
     </div>
   );
