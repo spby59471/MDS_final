@@ -5,6 +5,7 @@ import {
 
 interface YearDashboardProps {
   selectedYear: number;
+  goBack: () => void;
 }
 
 interface SummaryData {
@@ -61,7 +62,8 @@ const INDICATOR_GROUPS = [
   }
 ];
 
-const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
+const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear, goBack }) => {
+  const [localYear, setLocalYear] = useState<number>(selectedYear);
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [distributionData, setDistributionData] = useState<Record<string, DistributionData[]>>({});
   const [totalByCountry, setTotalByCountry] = useState<DistributionData[]>([]);
@@ -72,7 +74,7 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
       setLoading(true);
 
       try {
-        const summaryRes = await fetch(`/data/yearly?year=${selectedYear}`);
+        const summaryRes = await fetch(`/data/yearly?year=${localYear}`);
         const summaryJson = await summaryRes.json();
         setSummary(summaryJson);
 
@@ -81,7 +83,7 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
         let combinedData: DistributionData[] = [];
 
         for (const indicator of indicators) {
-          const distRes = await fetch(`/data/top?year=${selectedYear}&indicator=${indicator.key}&top_n=5`);
+          const distRes = await fetch(`/data/top?year=${localYear}&indicator=${indicator.key}&top_n=5`);
           const distJson = await distRes.json();
 
           const cleaned = distJson.map((item: any) => ({
@@ -93,7 +95,6 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
           combinedData = [...combinedData, ...cleaned];
         }
 
-        // 計算每個國家的碳排總量
         const totalsMap: Record<string, number> = {};
         for (const { area, value } of combinedData) {
           totalsMap[area] = (totalsMap[area] || 0) + value;
@@ -103,7 +104,7 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
           ([area, value]) => ({ area, value })
         );
 
-        totalPerCountry.sort((a, b) => b.value - a.value); // 遞減排序
+        totalPerCountry.sort((a, b) => b.value - a.value);
         setTotalByCountry(totalPerCountry);
         setDistributionData(distributions);
       } catch (error) {
@@ -114,14 +115,38 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
     };
 
     load();
-  }, [selectedYear]);
+  }, [localYear]);
 
   if (loading || !summary) return <p className="text-center">載入中...</p>;
 
   return (
     <div className="space-y-10">
+      <div className="text-left mb-4 flex flex-wrap gap-4 items-center">
+        <button
+          onClick={goBack}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          回到預測頁面
+        </button>
+
+        <select
+          value={localYear}
+          onChange={(e) => setLocalYear(Number(e.target.value))}
+          className="border rounded px-4 py-2"
+        >
+          {Array.from({ length: 2020 - 1990 + 1 }, (_, i) => {
+            const year = 2020 - i;
+            return (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            );
+          })}
+        </select>
+      </div>
+
       <div className="bg-white p-6 rounded shadow text-center">
-        <h2 className="text-xl font-bold mb-2">{selectedYear} 全球總覽</h2>
+        <h2 className="text-xl font-bold mb-2">{localYear} 全球總覽</h2>
         <p>碳排放總量：{summary.total_emission.toLocaleString()} Mt CO₂</p>
         <p>平均氣溫：{summary.avg_temp.toFixed(2)} °C</p>
         <p>總人口：{(summary.total_pop_male + summary.total_pop_female).toLocaleString()} 人</p>
@@ -130,39 +155,32 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
       <div className="bg-white p-6 rounded shadow">
         <h2 className="text-lg font-bold mb-4">各國總碳排放量（所有指標總和）</h2>
         <ResponsiveContainer width="100%" height={500}>
-            <BarChart data={totalByCountry.filter(d => d.area !== "China, mainland")}>
+          <BarChart data={totalByCountry.filter(d => d.area !== "China, mainland")}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
-                dataKey="area"
-                interval={0}
-                angle={-45}
-                textAnchor="end"
-                tick={{ fontSize: 10 }}
-                height={80}
-                label={{
-                value: 'Country',
-                position: 'insideBottomRight',
-                offset: -5,
-                style: { textAnchor: 'end', fontSize: 12 }
-                }}
+              dataKey="area"
+              interval={0}
+              angle={-45}
+              textAnchor="end"
+              tick={{ fontSize: 10 }}
+              height={80}
             />
             <YAxis
-                tick={{ fontSize: 12 }}
-                width={70}
-                label={{
+              tick={{ fontSize: 12 }}
+              width={70}
+              label={{
                 value: 'kt',
                 position: 'insideTopLeft',
                 offset: 0,
                 angle: 0,
                 style: { textAnchor: 'start', fontSize: 12 }
-                }}
+              }}
             />
             <Tooltip formatter={(value: number) => [`${value.toLocaleString()} kt`, '總排放']} />
             <Bar dataKey="value" fill="#8884d8" />
-            </BarChart>
+          </BarChart>
         </ResponsiveContainer>
-        </div>
-
+      </div>
 
       {INDICATOR_GROUPS.map(group => (
         <div key={group.category}>
@@ -181,12 +199,6 @@ const YearDashboard: React.FC<YearDashboardProps> = ({ selectedYear }) => {
                       textAnchor="end"
                       tick={{ fontSize: 10 }}
                       height={60}
-                      label={{
-                        value: 'Country',
-                        position: 'insideBottomRight',
-                        offset: -5,
-                        style: { textAnchor: 'end', fontSize: 12 }
-                     }}
                     />
                     <YAxis
                       tick={{ fontSize: 12 }}

@@ -9,14 +9,32 @@ from pydantic import BaseModel
 import joblib
 import numpy as np
 from tensorflow.keras.models import load_model
+from pathlib import Path
+from fastapi.middleware.cors import CORSMiddleware
+import pandas as pd
+import pycountry
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-# # 載入 scaler 與模型
-# scaler = joblib.load("./data/rnn_scaler_smote.pkl")
-# rnn_model = load_model("./data/rnn_model_smote.h5")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# 確保從 main.py 相對位置推回根目錄
+base_dir = Path(__file__).resolve().parent.parent
+
+scaler_path = base_dir / "backend" / "data" / "rnn_scaler_smote.pkl"
+model_path = base_dir / "backend" / "data" / "rnn_model_smote.h5"
+
+scaler = joblib.load(scaler_path)
+rnn_model = load_model(model_path)
+
+df = pd.read_csv("./data/agri_CO2_preprocessing_ex.csv")
 
 # 依賴項目
 def get_db():
@@ -25,6 +43,16 @@ def get_db():
         yield db
     finally:
         db.close()
+        
+# 加入 ISO-3 國碼（只做一次）
+def get_iso_alpha(country_name):
+    try:
+        return pycountry.countries.lookup(country_name).alpha_3
+    except:
+        return None
+
+df["iso_alpha"] = df["Area"].apply(get_iso_alpha)
+df = df[df["iso_alpha"].notnull()]
         
 class InputData(BaseModel):
     # 順序需與模型訓練時一致
@@ -84,3 +112,14 @@ def predict_emission(data: InputData):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# 提供資料 API
+@app.get("/api/global_data")
+def get_global_data(year: int):
+    year_df = df[df["Year"] == year]
+    return year_df[["iso_alpha", "Area", "continent", "total_emission"]].to_dict(orient="records")
+
+# 年份下拉選單可用年份
+@app.get("/api/years")
+def get_years():
+    return sorted(df["Year"].unique(), reverse=True)

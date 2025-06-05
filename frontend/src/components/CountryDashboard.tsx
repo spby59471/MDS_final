@@ -1,9 +1,9 @@
-// components/CountryDashboard.tsx
 import React, { useEffect, useState } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface CountryDashboardProps {
   selectedYear: number;
+  goBack: () => void;
 }
 
 interface CountryData {
@@ -13,17 +13,16 @@ interface CountryData {
   temperature: number;
 }
 
-const CountryDashboard: React.FC<CountryDashboardProps> = ({ selectedYear }) => {
+const CountryDashboard: React.FC<CountryDashboardProps> = ({ selectedYear, goBack }) => {
   const [data, setData] = useState<CountryData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       const res = await fetch(`/data/country_summary?year=${selectedYear}`);
       const raw = await res.json();
-        if (!Array.isArray(raw)) {
+      if (!Array.isArray(raw)) {
         console.error("API response is not an array:", raw);
         return;
       }
@@ -43,6 +42,16 @@ const CountryDashboard: React.FC<CountryDashboardProps> = ({ selectedYear }) => 
 
   return (
     <div className="space-y-10">
+      <div className="text-left">
+        <button
+          onClick={goBack}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          回到預測頁面
+        </button>
+        {/* <p className="text-gray-600 mt-2">目前年份：{selectedYear}</p> */}
+      </div>
+
       <div className="bg-white p-6 rounded shadow">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">CO₂排放 vs 人口</h2>
         <ResponsiveContainer width="100%" height={300}>
@@ -55,6 +64,7 @@ const CountryDashboard: React.FC<CountryDashboardProps> = ({ selectedYear }) => 
           </ScatterChart>
         </ResponsiveContainer>
       </div>
+
       <div className="bg-white p-6 rounded shadow">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">CO₂排放 vs 氣溫</h2>
         <ResponsiveContainer width="100%" height={300}>
