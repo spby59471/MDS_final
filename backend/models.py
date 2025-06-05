@@ -3,8 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
-class EmissionData(Base):
-    __tablename__ = "emission_data"
+class PEmissionData(Base):
+    __tablename__ = "p_emission_data"
 
     id = Column(Integer, primary_key=True, index=True)
     area = Column(String)

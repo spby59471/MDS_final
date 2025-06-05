@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, Float, String
 from .database import Base
 
-class EmissionData(Base):
-    __tablename__ = "emission_data"
+class PEmissionData(Base):
+    __tablename__ = "p_emission_data"
 
     id = Column(Integer, primary_key=True, index=True)
     area = Column(String)
